@@ -1,0 +1,70 @@
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,cache = TRUE)
+```
+
+
+## Project Description and Goal
+
+One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants.
+
+### Read in data
+
+The following code imports the data, partions the data into a new training set and a new testing set, and loads the necessary packages.  Variables that have missing data, are timestamps, and user names are discarded because they do not provide useful information regarding accurate predictions.  For purposes of reproducibility the pusdo-random seed will be set at 1991.
+
+```{r,results='hide',message=FALSE,warning=FALSE}
+set.seed(1991)
+library(readr)
+library(AppliedPredictiveModeling)
+library(caret)
+training <- read_csv("C:/Users/Kevin/Desktop/pml-training.csv",
+col_types = cols(X1 = col_skip(), classe = col_factor(levels = c("A",
+"B", "C", "D", "E")), cvtd_timestamp = col_skip(),
+new_window = col_factor(levels = c("yes",
+"no"))), trim_ws = FALSE)
+
+training<-training[,-c(1:5)]
+new<-training[,colSums(is.na(training))==0]
+inTrain = createDataPartition(new$classe, p = .75)[[1]]
+Newtraining = new[ inTrain,]
+Newtesting = new[-inTrain,]
+```
+
+
+## Building a model
+
+The model I chose in this project is the Random Forest model because I have been doing personal research regarding decision trees and this model provided a sufficient model with high specificity and accuracy.
+
+The following code builds a Random Forest model on the Newtraining set.
+
+```{r,tidy=TRUE,message=FALSE,warning=FALSE}
+library(randomForest)
+rffit<-randomForest(classe~.,data = Newtraining)
+rffit
+```
+
+As Shown above there is an expected out of sample error rate of 0.51%.
+
+## Cross Validation
+
+The following uses the Newtesting data to conduct an out-of-sample error rate, accuracy, specificity, sensitivity, and related statistics
+
+```{r,tidy=TRUE}
+rfpred<-predict(rffit,newdata = Newtesting)
+confusionMatrix(Newtesting$classe, rfpred)
+```
+
+From above we see that the expected accuracy, with 95% confidence, lies in the interval of (0.9913, 0.9959).
+
+
+## Test data Predictions
+
+The following provides the predictions of the unused test data provided in the original project instructions.
+
+```{r,warning=FALSE,message=FALSE,tidy=TRUE}
+testing <- read_csv("C:/Users/Kevin/Desktop/pml-testing.csv")
+predict(rffit,newdata = testing)
+```
+
+
